@@ -1,0 +1,78 @@
+const express = require('express');
+const router = express.Router();
+const db = require('../database.js');
+
+
+//post
+router.post('/', (req, res) => {
+    const { name, price, stock } = req.body;
+    const stmt = db.prepare(`INSERT INTO products (name, price, stock) VALUES (?, ?, ?)`);
+    const result = stmt.run(name, price, stock);
+    const product = db.prepare(`SELECT * FROM products WHERE id = ?`).get(result.lastInsertRowid);
+    res.json(product);
+});
+
+
+router.get('/', (req, res) => {
+    const products = db.prepare(`SELECT * FROM products`).all();
+    res.json(products);
+});
+
+
+router.delete('/:id', (req, res) => {
+    const product = db.prepare(`SELECT * FROM products WHERE id = ?`).get(req.params.id);
+    if (!product) {
+        res.status(404).json({ message: 'Produto não encontrado' });
+        return;
+    }
+    db.prepare(`DELETE FROM products WHERE id = ?`).run(req.params.id);
+    res.json({ message: 'Produto excluído com sucesso' });
+});
+
+//change
+router.put('/:id', (req, res) => {
+    const { name, price, stock } = req.body;
+    const product = db.prepare(`SELECT * FROM products WHERE id = ?`).get(req.params.id);
+    if (!product) {
+        res.status(404).json({ message: 'Produto não encontrado' });
+        return;
+    }
+    db.prepare(`UPDATE products SET name = ?, price = ?, stock = ? WHERE id = ?`).run(name, price, stock, req.params.id);
+    res.json({ message: 'Produto atualizado com sucesso' });
+})
+
+
+router.post('/:id/saida', (req, res) => {
+    const product = db.prepare(`SELECT * FROM products WHERE id = ?`).get(req.params.id);
+    if (!product) {
+        res.status(404).json({ message: 'Produto não encontrado' });
+        return;
+    }
+    const { stock } = req.body;
+    if (!stock || stock <= 0) {
+        res.status(400).json({ message: 'quantidade inválida' });
+        return;
+    }
+    if (product.stock < stock) {
+        res.status(400).json({ message: 'Estoque insuficiente' });
+        return;
+    }
+    db.prepare(`UPDATE products SET stock = stock - ? WHERE id = ?`).run(stock, req.params.id);
+    db.prepare(`INSERT INTO movements (product_id, type,stock, date) VALUES (?, ?, ?, ?)`).run(req.params.id, 'saida', stock, new Date().toISOString());
+    res.json({ message: 'Saída do produto registrada com sucesso' });
+});
+
+
+router.post('/:id/entrada', (req, res) => {
+    const product = db.prepare(`SELECT * FROM products WHERE id = ?`).get(req.params.id);
+    if (!product) {
+        res.status(404).json({ message: 'Produto não encontrado' });
+        return;
+    }
+    const { stock } = req.body;
+    db.prepare(`UPDATE products SET stock = stock + ? WHERE id = ?`).run(stock, req.params.id);
+    db.prepare(`INSERT INTO movements (product_id, type, stock, date) VALUES (?, ?, ?, ?)`).run(req.params.id, 'entrada', stock, new Date().toISOString());
+    res.json({ message: 'Entrada do produto registrada com sucesso' });
+});
+
+module.exports = router;
