@@ -1,6 +1,7 @@
 const Database = require("better-sqlite3");
 
-const db = new Database('estoque.db');
+const DB_PATH = process.env.DB_PATH || 'estoque.db'; // Caminho do banco via .env
+const db = new Database(DB_PATH);
 
 db.exec(`
 CREATE TABLE if NOT EXISTS products (

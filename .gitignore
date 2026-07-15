@@ -1,2 +1,5 @@
 node_modules/
 estoque.db
+
+# Variáveis de ambiente (NUNCA commitar este arquivo!)
+.env
