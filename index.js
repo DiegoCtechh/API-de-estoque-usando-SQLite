@@ -1,17 +1,20 @@
-require("dotenv").config(); // Carrega as variáveis do arquivo .env
+import dotenv from "dotenv";
+dotenv.config();
 
-const express = require("express");
+import express from "express";
 
 const app = express();
-const PORT = process.env.PORT || 3000; // Usa a variável do .env, ou 3000 como padrão
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-const productsRouter = require('./routes/products');
-const movementsRouter = require('./routes/movements');
+import productsRouter from './routes/products.js';
+import movementsRouter from './routes/movements.js';
+import authRouter from './routes/auth.js';
 
 app.use('/products', productsRouter);
 app.use('/movements', movementsRouter);
+app.use('/auth', authRouter);
 
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT} [${process.env.NODE_ENV}]`);

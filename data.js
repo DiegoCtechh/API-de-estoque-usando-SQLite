@@ -4,4 +4,4 @@ const data = {
     nextId: 1
 }
 
-module.exports = data;
+export default data;

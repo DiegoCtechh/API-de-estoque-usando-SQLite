@@ -1,6 +1,6 @@
-const Database = require("better-sqlite3");
+import Database from "better-sqlite3";
 
-const DB_PATH = process.env.DB_PATH || 'estoque.db'; // Caminho do banco via .env
+const DB_PATH = process.env.DB_PATH || 'estoque.db';
 const db = new Database(DB_PATH);
 
 db.exec(`
@@ -24,4 +24,11 @@ CREATE TABLE if NOT EXISTS movements (
 )
 `);
 
-module.exports = db;
+db.exec(`
+CREATE TABLE if NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL
+)`);
+
+export default db;

@@ -1,10 +1,11 @@
-const express = require('express');
-const router = express.Router();
-const db = require('../database.js');
+import express from "express";
+import db from "../database.js";
+import authenticateToken from './middleware/auth.js';
 
+const router = express.Router();
 
 //post
-router.post('/', (req, res) => {
+router.post('/', authenticateToken, (req, res) => {
     const { name, price, stock } = req.body;
 
     if (!name || name.trim() === '') {
@@ -29,13 +30,13 @@ router.post('/', (req, res) => {
 });
 
 
-router.get('/', (req, res) => {
+router.get('/', authenticateToken, (req, res) => {
     const products = db.prepare(`SELECT * FROM products`).all();
     res.json(products);
 });
 
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', authenticateToken, (req, res) => {
     const product = db.prepare(`SELECT * FROM products WHERE id = ?`).get(req.params.id);
     if (!product) {
         res.status(404).json({ message: 'Produto não encontrado' });
@@ -46,7 +47,7 @@ router.delete('/:id', (req, res) => {
 });
 
 //change
-router.put('/:id', (req, res) => {
+router.put('/:id', authenticateToken, (req, res) => {
     const { name, price, stock } = req.body;
     const product = db.prepare(`SELECT * FROM products WHERE id = ?`).get(req.params.id);
     if (!product) {
@@ -70,7 +71,7 @@ router.put('/:id', (req, res) => {
     res.json({ message: 'Produto atualizado com sucesso' });
 })
 
-router.post('/:id/entrada', (req, res) => {
+router.post('/:id/entrada', authenticateToken, (req, res) => {
     const product = db.prepare(`SELECT * FROM products WHERE id = ?`).get(req.params.id);
 
     if (!product) {
@@ -89,7 +90,7 @@ router.post('/:id/entrada', (req, res) => {
     res.json({ message: 'Entrada do produto registrada com sucesso' });
 });
 
-router.post('/:id/saida', (req, res) => {
+router.post('/:id/saida', authenticateToken, (req, res) => {
     const product = db.prepare(`SELECT * FROM products WHERE id = ?`).get(req.params.id);
     if (!product) {
         res.status(404).json({ message: 'Produto não encontrado' });
@@ -109,4 +110,4 @@ router.post('/:id/saida', (req, res) => {
     res.json({ message: 'Saída do produto registrada com sucesso' });
 });
 
-module.exports = router;
+export default router;
