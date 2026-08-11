@@ -1,64 +1,79 @@
 import express from 'express';
-import db from '../database.js';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { register, login } from '../controllers/authController.js';
 
 const router = express.Router();
 
-router.post("/register", (req, res) => {
-    const { username, password } = req.body;
+/**
+ * @swagger
+ * tags:
+ *   name: Autenticação
+ *   description: Registro e login de usuários
+ */
 
-    if (!username || !password || username.trim() === "" || password.length === 0) {
-        return res.status(400).json({ message: "todos os campos sao obrigatorios" });
-    }
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: Registra um novo usuário
+ *     tags: [Autenticação]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [username, password]
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: diego
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: minhasenha123
+ *     responses:
+ *       201:
+ *         description: Usuário registrado com sucesso
+ *       400:
+ *         description: Dados inválidos ou usuário já existe
+ */
+router.post('/register', register);
 
-    const userExists = db.prepare("SELECT * FROM users WHERE username = ?").get(username)
-
-    if (userExists) {
-        return res.status(400).json({ message: "usuario ja existe" });
-    }
-
-    const hashPassword = bcrypt.hashSync(password, 10);
-
-    try {
-        const stmt = db.prepare("INSERT INTO users (username, password) VALUES (?, ?)");
-        const result = stmt.run(username, hashPassword);
-        if (!result.changes) {
-            throw new Error("Erro ao registrar usuário");
-        }
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Erro ao registrar usuário" });
-    }
-
-    return res.status(201).json({ message: "usuario registrado com sucesso" });
-});
-
-router.post("/login", (req, res) => {
-    const { username, password } = req.body;
-
-    if (!username || !password || username.trim() === "" || password.length === 0) {
-        return res.status(400).json({ message: "todos os campos sao obrigatorios" });
-    }
-
-    const user = db.prepare("SELECT * FROM users WHERE username = ?").get(username);
-
-    if (!user) {
-        return res.status(401).json({ message: "usuario nao encontrado" });
-    }
-
-    const passwordMatch = bcrypt.compareSync(password, user.password);
-
-    if (!passwordMatch) {
-        return res.status(401).json({ message: "senha incorreta" });
-    }
-
-    const token = jwt.sign({ userId: user.id, username: user.username },
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" }
-    );
-
-    return res.status(200).json({ token });
-});
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Autentica um usuário e retorna um token JWT
+ *     tags: [Autenticação]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [username, password]
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: diego
+ *               password:
+ *                 type: string
+ *                 example: minhasenha123
+ *     responses:
+ *       200:
+ *         description: Login bem-sucedido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *       401:
+ *         description: Usuário ou senha incorretos
+ */
+router.post('/login', login);
 
 export default router;
