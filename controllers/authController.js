@@ -1,17 +1,15 @@
 import db from "../database.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { authSchema } from '../schemas/authSchema.js';
 
 export function register(req, res) {
-    const { username, password } = req.body;
-
-    if (!username || !password || username.trim() === "" || password.length === 0) {
-        return res.status(400).json({ message: "Todos os campos são obrigatórios" });
+    const validation = authSchema.safeParse(req.body);
+    if (!validation.success) {
+        return res.status(400).json({ message: validation.error.errors });
     }
 
-    if (password.length < 6) {
-        return res.status(400).json({ message: "A senha deve ter pelo menos 6 caracteres" });
-    }
+    const { username, password } = validation.data;
 
     const userExists = db.prepare("SELECT * FROM users WHERE username = ?").get(username);
     if (userExists) {
@@ -35,11 +33,12 @@ export function register(req, res) {
 }
 
 export function login(req, res) {
-    const { username, password } = req.body;
-
-    if (!username || !password || username.trim() === "" || password.length === 0) {
-        return res.status(400).json({ message: "Todos os campos são obrigatórios" });
+    const validation = authSchema.safeParse(req.body);
+    if (!validation.success) {
+        return res.status(400).json({ message: validation.error.errors });
     }
+
+    const { username, password } = validation.data;
 
     const user = db.prepare("SELECT * FROM users WHERE username = ?").get(username);
     if (!user) {

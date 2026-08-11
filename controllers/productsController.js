@@ -58,21 +58,18 @@ export function getProductById(req, res) {
 }
 
 export function updateProduct(req, res) {
-    const { name, price, stock } = req.body;
     const product = db.prepare(`SELECT * FROM products WHERE id = ?`).get(req.params.id);
 
     if (!product) {
         return res.status(404).json({ message: 'Produto não encontrado' });
     }
-    if (!name || name.trim() === '') {
-        return res.status(400).json({ message: 'Nome do produto é obrigatório' });
+
+    const validation = productSchema.safeParse(req.body);
+    if (!validation.success) {
+        return res.status(400).json({ message: validation.error.errors });
     }
-    if (price === undefined || typeof price !== 'number' || price < 0) {
-        return res.status(400).json({ message: 'Preço deve ser um número positivo' });
-    }
-    if (stock === undefined || typeof stock !== 'number' || !Number.isInteger(stock) || stock < 0) {
-        return res.status(400).json({ message: 'Estoque deve ser um número inteiro não negativo' });
-    }
+
+    const { name, price, stock } = validation.data;
 
     db.prepare(`UPDATE products SET name = ?, price = ?, stock = ? WHERE id = ?`)
         .run(name.trim(), price, stock, req.params.id);
